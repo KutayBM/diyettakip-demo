@@ -32,7 +32,21 @@
     textarea { min-height:92px; resize:vertical; }
     .full { grid-column:1/-1; }
     .muted { color:var(--muted); }
-    .banner { min-height:360px; color:white; border-radius:8px; overflow:hidden; display:grid; align-items:center; padding:34px; background:linear-gradient(90deg,rgba(15,53,45,.95),rgba(15,53,45,.75),rgba(15,53,45,.15)),url("/assets/dr-kutay-portrait.png") center/cover; }
+    .banner-wrap { overflow:hidden; }
+    .banner-track { display:grid; grid-auto-flow:column; grid-auto-columns:min(86vw,720px); gap:18px; width:max-content; animation:bannerSlide 15s infinite ease-in-out; }
+    .banner-track:hover { animation-play-state:paused; }
+    .banner-track::-webkit-scrollbar { height:8px; }
+    .banner-track::-webkit-scrollbar-thumb { background:#c9ddd4; border-radius:999px; }
+    .banner { min-height:360px; color:white; border-radius:8px; overflow:hidden; display:grid; align-items:center; padding:34px; scroll-snap-align:start; background:linear-gradient(90deg,rgba(15,53,45,.95),rgba(15,53,45,.75),rgba(15,53,45,.15)),var(--banner-image) center/cover; }
+    .banner.plan { --banner-image:url("/assets/banner-plan.png"); }
+    .banner.follow { --banner-image:url("/assets/banner-mobile.png"); }
+    .banner.doctor { --banner-image:url("/assets/dr-kutay-portrait.png"); }
+    @keyframes bannerSlide {
+      0%, 25% { transform:translateX(0); }
+      33%, 58% { transform:translateX(calc(-1 * (min(86vw,720px) + 18px))); }
+      66%, 91% { transform:translateX(calc(-2 * (min(86vw,720px) + 18px))); }
+      100% { transform:translateX(0); }
+    }
     .profile { display:none; }
     .info-grid,.week-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; }
     .box,.week,.weight { border:1px solid var(--line); border-radius:8px; padding:14px; background:#fbfefd; }
@@ -65,7 +79,13 @@
 
   <main id="home">
     <section class="hero"><div><h1>14 günlük ücretsiz deneme beslenme programını al.</h1><p>Bilgilerin güvenle alınır, Dr. Dyt. Alperen Aksu tarafından değerlendirilir ve beslenme planını hesabında takip edebilirsin.</p><button class="btn coral" onclick="trialForm.scrollIntoView({behavior:'smooth'})">Ücretsiz Denemeye Kaydol</button></div></section>
-    <section class="section"><div class="banner"><div><h2 style="color:white">Bilimsel temelli, sürdürülebilir beslenme takibi.</h2><p>Dr. Dyt. Alperen Aksu, danışanlarına kişiye özel beslenme planları hazırlar ve süreci kilo takibiyle birlikte yönetir.</p></div></div></section>
+    <section class="section">
+      <div class="banner-wrap"><div class="banner-track">
+        <div class="banner doctor"><div><h2 style="color:white">Bilimsel temelli, sürdürülebilir beslenme takibi.</h2><p>Dr. Dyt. Alperen Aksu, danışanlarına kişiye özel beslenme planları hazırlar ve süreci kilo takibiyle birlikte yönetir.</p></div></div>
+        <div class="banner follow"><div><h2 style="color:white">14 günlük deneme süreci sonunda yalnız değilsiniz.</h2><p>Deneme süreniz tamamlandığında Dr. Dyt. Alperen Aksu sizinle iletişime geçerek sürecin devamı hakkında görüşme sağlar.</p></div></div>
+        <div class="banner plan"><div><h2 style="color:white">Planlarınız ve ölçümleriniz tek yerde takip edilir.</h2><p>Beslenme programınız haftalık olarak hazırlanır, kilo takibiniz ise ofis randevularınız sonrasında güncellenir.</p></div></div>
+      </div></div>
+    </section>
     <section class="section" id="trialForm">
       <h2>14 Günlük Deneme Kaydı</h2>
       <p class="muted">Kayıt öncesinde e-posta alan adının mail alabilir olup olmadığı kontrol edilir. Başvurunun tamamlanması için e-posta doğrulama linkine basılması gerekir.</p>
