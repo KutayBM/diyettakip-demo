@@ -1,0 +1,201 @@
+{
+  "users": [
+    {
+      "id": "admin_1",
+      "role": "admin",
+      "name": "Dr. Kutay",
+      "email": "deneme@ornek.com",
+      "passwordHash": "9df1cdc49a24f93c7e7827072a60b580:7c6eda79e84142c5ebaccdd56effd01d1eddec60b1075a8d0309a0763295c8ed",
+      "createdAt": "2026-07-08T20:29:29.411Z"
+    },
+    {
+      "id": "client_1",
+      "role": "client",
+      "name": "Deneme Danışanı",
+      "email": "danisan@ornek.com",
+      "passwordHash": "ddb9bbad6f848b45e0738405293b3509:2aa41d48fd1e2dc691da461caf70bc67b256cd29edb0ba14bf1ee0d1b3be9316",
+      "createdAt": "2026-07-08T20:29:29.411Z"
+    },
+    {
+      "id": "client_f2c0e0726cba21057ca8",
+      "role": "client",
+      "name": "ayşe fatma hayriye",
+      "email": "aysefatma@gmail.com",
+      "passwordHash": "e6498fd2bd850050871205e4e1c76793:2650de46a323071cf0fb276129b601de11f77bb1fee6bca89324bbf7e8b6b3d1",
+      "createdAt": "2026-07-08T20:40:07.129Z"
+    },
+    {
+      "id": "client_18925a2934ed53c6faa8",
+      "role": "client",
+      "name": "dstst",
+      "email": "kutaykbm@gmail.com",
+      "passwordHash": "1094321aebc127f70d7d01f1a0f455c3:fac411f18e797027497b291c2e7ad09cdb1faf98cd98bc6e5d907ebbb504d7bb",
+      "createdAt": "2026-07-08T21:08:47.871Z"
+    }
+  ],
+  "clients": [
+    {
+      "id": "profile_ddc6d6dd7120ae201e02",
+      "userId": "client_18925a2934ed53c6faa8",
+      "name": "dstst",
+      "email": "kutaykbm@gmail.com",
+      "phone": "05437617874",
+      "gender": "Kadın",
+      "age": "13",
+      "blood": "Belirtilmedi",
+      "allergies": "qwr",
+      "goal": "asr",
+      "membership": "normal",
+      "status": "continued",
+      "registeredAt": "2026-07-08",
+      "planNote": "Plan hazırlık aşamasında.",
+      "weeklyPlans": [],
+      "weightHistory": []
+    },
+    {
+      "id": "profile_c446fee32dc2ec2e06df",
+      "userId": "client_f2c0e0726cba21057ca8",
+      "name": "ayşe fatma hayriye",
+      "email": "aysefatma@gmail.com",
+      "phone": "05437617874",
+      "gender": "Erkek",
+      "age": "30",
+      "blood": "ab+",
+      "allergies": "yok",
+      "goal": "yok",
+      "membership": "trial",
+      "status": "active",
+      "registeredAt": "2026-07-08",
+      "planNote": "Deneme Haftası",
+      "weeklyPlans": [
+        {
+          "summary": "Deneme Haftası",
+          "days": {
+            "Pazartesi": {
+              "breakfast": "asrasr",
+              "snack1": "asrsar",
+              "lunch": "asrasr",
+              "snack2": "asrasr",
+              "dinner": "asrsara",
+              "snack3": "srasrsa"
+            },
+            "Salı": {
+              "breakfast": "rasrasr",
+              "snack1": "asrasras",
+              "lunch": "asrasr",
+              "snack2": "asrasrasr",
+              "dinner": "asrasrasr",
+              "snack3": "asrasras"
+            },
+            "Çarşamba": {
+              "breakfast": "asrasrsara",
+              "snack1": "srasras",
+              "lunch": "asrasrsa",
+              "snack2": "asrasrasr",
+              "dinner": "asrsaras",
+              "snack3": "rasrasrasr"
+            },
+            "Perşembe": {
+              "breakfast": "asrasras",
+              "snack1": "rasras",
+              "lunch": "rasrasras",
+              "snack2": "asrasrasr",
+              "dinner": "asrasrasr",
+              "snack3": "asrasrasr"
+            },
+            "Cuma": {
+              "breakfast": "asrasrasr",
+              "snack1": "asrasra",
+              "lunch": "srasra",
+              "snack2": "srasr",
+              "dinner": "asras",
+              "snack3": "asrasr"
+            },
+            "Cumartesi": {
+              "breakfast": "asrasrasr",
+              "snack1": "asrasras",
+              "lunch": "rasras",
+              "snack2": "rasrasr",
+              "dinner": "asrasrasr",
+              "snack3": "asrasras"
+            },
+            "Pazar": {
+              "breakfast": "rasrasra",
+              "snack1": "asrasr",
+              "lunch": "asrasrasr",
+              "snack2": "asrasrasr",
+              "dinner": "asrasr",
+              "snack3": "asrasrasr"
+            }
+          }
+        },
+        {
+          "summary": "2. hafta planı",
+          "days": {
+            "Salı": {
+              "breakfast": "sdtsdt",
+              "snack1": "dgsd",
+              "lunch": "sdtsdt",
+              "snack2": "sdtsd",
+              "dinner": "tsdtsd",
+              "snack3": "tsd"
+            }
+          }
+        },
+        {
+          "summary": "3. hafta planı",
+          "days": {
+            "Pazartesi": {
+              "breakfastTime": "08:00",
+              "breakfast": "dgsd",
+              "snack1Time": "10:30",
+              "snack1": "fsdgsd",
+              "lunch": "gsdgsdg"
+            }
+          }
+        }
+      ],
+      "weightHistory": [
+        {
+          "month": "2026-08",
+          "kg": 55,
+          "note": "Ofis randevusu sonrası diyetisyen tarafından güncellendi"
+        },
+        {
+          "month": "2026-06",
+          "kg": 55,
+          "note": "Ofis randevusu sonrası diyetisyen tarafından güncellendi"
+        }
+      ]
+    },
+    {
+      "id": "client_1",
+      "userId": "client_1",
+      "name": "Deneme Danışanı",
+      "email": "danisan@ornek.com",
+      "phone": "0555 111 22 33",
+      "gender": "Kadın",
+      "age": "31",
+      "blood": "A Rh+",
+      "allergies": "Laktoz",
+      "goal": "Kilo verme ve gece atıştırmasını azaltma",
+      "membership": "trial",
+      "status": "active",
+      "registeredAt": "2026-07-08",
+      "planNote": "Deneme süreci isteği panelde bekliyor.",
+      "weeklyPlans": [],
+      "weightHistory": [
+        {
+          "month": "2026-03",
+          "kg": 60,
+          "note": "Ofis ölçümü"
+        },
+        {
+          "month": "2026-04",
+          "kg": 55,
+          "note": "Ofis ölçümü sonrası güncellendi"
+        }
+      ]
+    }
+  ]
+}
