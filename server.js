@@ -2,6 +2,7 @@ const http = require("http");
 const fs = require("fs");
 const path = require("path");
 const crypto = require("crypto");
+const dns = require("dns").promises;
 
 const PORT = Number(process.env.PORT || 3000);
 const SESSION_SECRET = process.env.SESSION_SECRET || crypto.randomBytes(32).toString("hex");
@@ -10,6 +11,34 @@ const PUBLIC_DIR = path.join(ROOT, "public");
 const DB_FILE = path.join(ROOT, "data", "db.json");
 
 const sessions = new Map();
+const disposableEmailDomains = new Set([
+  "10minutemail.com",
+  "tempmail.com",
+  "mailinator.com",
+  "guerrillamail.com",
+  "yopmail.com",
+  "trashmail.com",
+  "fakeinbox.com"
+]);
+const commonEmailDomainTypos = {
+  "gmal.com": "gmail.com",
+  "gmial.com": "gmail.com",
+  "gmail.con": "gmail.com",
+  "hotmal.com": "hotmail.com",
+  "hotmai.com": "hotmail.com",
+  "outlok.com": "outlook.com",
+  "outlook.con": "outlook.com",
+  "yaho.com": "yahoo.com"
+};
+const trustedEmailDomains = new Set([
+  "gmail.com",
+  "hotmail.com",
+  "outlook.com",
+  "yahoo.com",
+  "icloud.com",
+  "live.com",
+  "msn.com"
+]);
 
 function hashPassword(password, salt = crypto.randomBytes(16).toString("hex")) {
   const hash = crypto.pbkdf2Sync(password, salt, 120000, 32, "sha256").toString("hex");
@@ -27,6 +56,29 @@ function uid(prefix) {
   return `${prefix}_${crypto.randomBytes(10).toString("hex")}`;
 }
 
+function verificationToken() {
+  return crypto.randomBytes(32).toString("hex");
+}
+
+function verificationUrl(req, token) {
+  const proto = req.headers["x-forwarded-proto"] || "http";
+  const host = req.headers.host || `localhost:${PORT}`;
+  return `${proto}://${host}/?verify=${encodeURIComponent(token)}`;
+}
+
+function normalizeDb(db) {
+  db.users = db.users || [];
+  db.clients = db.clients || [];
+  for (const user of db.users) {
+    if (user.role === "client" && typeof user.emailVerified !== "boolean") user.emailVerified = true;
+  }
+  for (const client of db.clients) {
+    const user = db.users.find(item => item.id === client.userId);
+    if (typeof client.emailVerified !== "boolean") client.emailVerified = user?.emailVerified !== false;
+  }
+  return db;
+}
+
 function seedDb() {
   const now = new Date().toISOString();
   return {
@@ -34,7 +86,7 @@ function seedDb() {
       {
         id: "admin_1",
         role: "admin",
-        name: "Dr. Kutay",
+        name: "Dr. Dyt. Alperen Aksu",
         email: "deneme@ornek.com",
         passwordHash: hashPassword("123456"),
         createdAt: now
@@ -81,7 +133,7 @@ function ensureDb() {
 
 function readDb() {
   ensureDb();
-  return JSON.parse(fs.readFileSync(DB_FILE, "utf8"));
+  return normalizeDb(JSON.parse(fs.readFileSync(DB_FILE, "utf8")));
 }
 
 function writeDb(db) {
@@ -176,6 +228,7 @@ function publicClient(client) {
     goal: client.goal,
     membership: client.membership,
     status: client.status,
+    emailVerified: client.emailVerified !== false,
     registeredAt: client.registeredAt,
     planNote: client.planNote,
     weeklyPlans: client.weeklyPlans || [],
@@ -186,6 +239,30 @@ function publicClient(client) {
 function validateRequired(body, fields) {
   const missing = fields.filter(field => !String(body[field] || "").trim());
   return missing.length ? `${missing.join(", ")} alanları zorunlu.` : null;
+}
+
+async function validateEmailDeliverability(email) {
+  const normalized = String(email || "").trim().toLowerCase();
+  const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailPattern.test(normalized)) return "Lütfen geçerli bir e-posta adresi girin.";
+  const domain = normalized.split("@")[1];
+  if (commonEmailDomainTypos[domain]) {
+    return `E-posta alan adı hatalı olabilir. ${commonEmailDomainTypos[domain]} yazmak istemiş olabilir misiniz?`;
+  }
+  if (disposableEmailDomains.has(domain)) {
+    return "Geçici e-posta adresleriyle kayıt oluşturulamaz.";
+  }
+  try {
+    const mx = await Promise.race([
+      dns.resolveMx(domain),
+      new Promise((_, reject) => setTimeout(() => reject(new Error("DNS_TIMEOUT")), 2500))
+    ]);
+    if (!mx.length) return "Bu e-posta alan adı mail alamıyor görünüyor.";
+  } catch {
+    if (trustedEmailDomains.has(domain)) return null;
+    return "Bu e-posta alan adı doğrulanamadı. Lütfen farklı veya doğru bir e-posta adresi girin.";
+  }
+  return null;
 }
 
 async function handleApi(req, res, url) {
@@ -203,6 +280,7 @@ async function handleApi(req, res, url) {
     const body = await readBody(req);
     const user = db.users.find(item => item.role === "client" && item.email.toLowerCase() === String(body.email || "").toLowerCase());
     if (!user || !verifyPassword(body.password, user.passwordHash)) return sendJson(res, 401, { error: "E-posta veya şifre hatalı." });
+    if (user.emailVerified === false) return sendJson(res, 403, { error: "Lütfen önce e-posta adresinizi doğrulayın." });
     createSession(res, user);
     return sendJson(res, 200, { ok: true });
   }
@@ -212,13 +290,33 @@ async function handleApi(req, res, url) {
     return sendJson(res, 200, { ok: true });
   }
 
+  if (req.method === "GET" && url.pathname === "/api/verify-email") {
+    const token = String(url.searchParams.get("token") || "");
+    const user = db.users.find(item => item.role === "client" && item.emailVerificationToken === token);
+    if (!token || !user) return sendJson(res, 400, { error: "Doğrulama linki geçersiz." });
+    if (user.emailVerificationExpiresAt && new Date(user.emailVerificationExpiresAt).getTime() < Date.now()) {
+      return sendJson(res, 400, { error: "Doğrulama linkinin süresi dolmuş." });
+    }
+    user.emailVerified = true;
+    user.emailVerificationToken = null;
+    user.emailVerificationExpiresAt = null;
+    const client = db.clients.find(item => item.userId === user.id);
+    if (client) client.emailVerified = true;
+    writeDb(db);
+    createSession(res, user);
+    return sendJson(res, 200, { ok: true });
+  }
+
   if (req.method === "POST" && url.pathname === "/api/trial-register") {
     const body = await readBody(req);
     const error = validateRequired(body, ["name", "surname", "email", "password", "phone", "gender", "age", "allergies", "goal"]);
     if (error) return sendJson(res, 400, { error });
+    const emailError = await validateEmailDeliverability(body.email);
+    if (emailError) return sendJson(res, 400, { error: emailError });
     if (db.users.some(user => user.email.toLowerCase() === body.email.toLowerCase())) return sendJson(res, 409, { error: "Bu e-posta zaten kayıtlı." });
 
     const userId = uid("client");
+    const token = verificationToken();
     const name = `${body.name} ${body.surname}`.trim();
     db.users.push({
       id: userId,
@@ -226,6 +324,9 @@ async function handleApi(req, res, url) {
       name,
       email: body.email,
       passwordHash: hashPassword(body.password),
+      emailVerified: false,
+      emailVerificationToken: token,
+      emailVerificationExpiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24).toISOString(),
       createdAt: new Date().toISOString()
     });
     db.clients.unshift({
@@ -242,14 +343,13 @@ async function handleApi(req, res, url) {
       membership: "trial",
       status: "pending",
       registeredAt: new Date().toISOString().slice(0, 10),
-      planNote: "Deneme süreci isteğiniz Dr. Kutay paneline gönderildi.",
+      planNote: "Deneme süreci isteğiniz Dr. Dyt. Alperen Aksu tarafından değerlendirilecek.",
+      emailVerified: false,
       weeklyPlans: [],
       weightHistory: []
     });
     writeDb(db);
-    const user = db.users.find(item => item.id === userId);
-    createSession(res, user);
-    return sendJson(res, 201, { ok: true });
+    return sendJson(res, 201, { ok: true, verificationUrl: verificationUrl(req, token) });
   }
 
   if (req.method === "GET" && url.pathname === "/api/client/me") {
@@ -265,7 +365,7 @@ async function handleApi(req, res, url) {
 
     if (req.method === "GET" && url.pathname === "/api/admin/summary") {
       return sendJson(res, 200, {
-        pending: db.clients.filter(client => client.membership === "trial" && client.status === "pending").length,
+        pending: db.clients.filter(client => client.membership === "trial" && client.status === "pending" && client.emailVerified !== false).length,
         normal: db.clients.filter(client => client.membership === "normal").length,
         planned: db.clients.filter(client => client.weeklyPlans?.length).length,
         weights: db.clients.reduce((total, client) => total + (client.weightHistory?.length || 0), 0)
@@ -280,9 +380,11 @@ async function handleApi(req, res, url) {
       const body = await readBody(req);
       const error = validateRequired(body, ["name", "email", "password", "phone", "gender", "age", "allergies", "goal"]);
       if (error) return sendJson(res, 400, { error });
+      const emailError = await validateEmailDeliverability(body.email);
+      if (emailError) return sendJson(res, 400, { error: emailError });
       if (db.users.some(user => user.email.toLowerCase() === body.email.toLowerCase())) return sendJson(res, 409, { error: "Bu e-posta zaten kayıtlı." });
       const userId = uid("client");
-      db.users.push({ id: userId, role: "client", name: body.name, email: body.email, passwordHash: hashPassword(body.password), createdAt: new Date().toISOString() });
+      db.users.push({ id: userId, role: "client", name: body.name, email: body.email, passwordHash: hashPassword(body.password), emailVerified: true, createdAt: new Date().toISOString() });
       db.clients.unshift({
         id: uid("profile"),
         userId,
@@ -298,6 +400,7 @@ async function handleApi(req, res, url) {
         status: body.membership === "trial" ? "active" : "continued",
         registeredAt: new Date().toISOString().slice(0, 10),
         planNote: "Plan hazırlık aşamasında.",
+        emailVerified: true,
         weeklyPlans: [],
         weightHistory: []
       });

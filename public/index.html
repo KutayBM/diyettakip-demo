@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Dr. Kutay Beslenme Danışmanlığı</title>
+  <title>Dr. Dyt. Alperen Aksu</title>
   <style>
     :root { --green:#20745e; --dark:#0f352d; --mint:#f5fbf7; --line:#dbe8e2; --muted:#647d74; --coral:#ec746b; --white:#fff; --ink:#17302a; }
     * { box-sizing: border-box; }
@@ -52,20 +52,23 @@
     .hidden { display:none!important; }
     .toast { position:fixed; right:22px; bottom:22px; background:var(--dark); color:white; padding:14px 16px; border-radius:8px; opacity:0; transform:translateY(10px); transition:.22s; }
     .toast.show { opacity:1; transform:translateY(0); }
+    .verify-box { display:grid; gap:10px; background:#fff; border:1px solid var(--line); border-left:4px solid var(--green); border-radius:8px; padding:16px; }
+    .verify-box a { color:var(--green); font-weight:900; word-break:break-all; }
     @media(max-width:850px){ .grid-2,.form-grid,.info-grid,.week-grid{grid-template-columns:1fr} header{align-items:flex-start;flex-direction:column} }
   </style>
 </head>
 <body>
   <header>
-    <div class="brand"><span class="mark">K</span> Dr. Kutay Beslenme</div>
+    <div class="brand"><span class="mark">A</span> Dr. Dyt. Alperen Aksu</div>
     <div id="guestActions"><button class="btn secondary" onclick="showLogin()">Danışan Girişi</button> <button class="btn coral" onclick="trialForm.scrollIntoView({behavior:'smooth'})">14 Günlük Deneme</button></div>
   </header>
 
   <main id="home">
-    <section class="hero"><div><h1>14 günlük ücretsiz deneme beslenme programını al.</h1><p>Bilgilerin güvenli backend’e kaydedilir, Dr. Kutay panelinden isteğini kabul eder ve planını hesabında görebilirsin.</p><button class="btn coral" onclick="trialForm.scrollIntoView({behavior:'smooth'})">Ücretsiz Denemeye Kaydol</button></div></section>
-    <section class="section"><div class="banner"><div><h2 style="color:white">Bilimsel temelli, sürdürülebilir beslenme takibi.</h2><p>Dr. Kutay, danışanlarına kişiye özel beslenme planları hazırlar ve süreci kilo takibiyle birlikte yönetir.</p></div></div></section>
+    <section class="hero"><div><h1>14 günlük ücretsiz deneme beslenme programını al.</h1><p>Bilgilerin güvenle alınır, Dr. Dyt. Alperen Aksu tarafından değerlendirilir ve beslenme planını hesabında takip edebilirsin.</p><button class="btn coral" onclick="trialForm.scrollIntoView({behavior:'smooth'})">Ücretsiz Denemeye Kaydol</button></div></section>
+    <section class="section"><div class="banner"><div><h2 style="color:white">Bilimsel temelli, sürdürülebilir beslenme takibi.</h2><p>Dr. Dyt. Alperen Aksu, danışanlarına kişiye özel beslenme planları hazırlar ve süreci kilo takibiyle birlikte yönetir.</p></div></div></section>
     <section class="section" id="trialForm">
       <h2>14 Günlük Deneme Kaydı</h2>
+      <p class="muted">Kayıt öncesinde e-posta alan adının mail alabilir olup olmadığı kontrol edilir. Başvurunun tamamlanması için e-posta doğrulama linkine basılması gerekir.</p>
       <form class="card form-grid" onsubmit="registerTrial(event)">
         <label>İsim<input required name="name"></label><label>Soyisim<input required name="surname"></label>
         <label>E-posta<input required name="email" type="email"></label><label>Şifre<input required name="password" type="password" minlength="6"></label>
@@ -75,6 +78,7 @@
         <label class="full">Hedefiniz veya zorlandığınız konu<textarea required name="goal"></textarea></label>
         <button class="btn coral full">Deneme İsteği Gönder</button>
       </form>
+      <div id="verificationBox" class="verify-box hidden"></div>
     </section>
   </main>
 
@@ -113,8 +117,9 @@
     }
     function showHome(){ home.classList.remove("hidden"); login.classList.add("hidden"); profile.style.display="none"; guestActions.classList.remove("hidden"); }
     function showLogin(){ home.classList.add("hidden"); login.classList.remove("hidden"); profile.style.display="none"; guestActions.classList.remove("hidden"); }
-    async function registerTrial(event){ event.preventDefault(); const body=Object.fromEntries(new FormData(event.target)); try{ await api("/api/trial-register",{method:"POST",body:JSON.stringify(body)}); toastMsg("Deneme isteğiniz panele gönderildi."); await loadProfile(); }catch(e){ toastMsg(e.message); } }
+    async function registerTrial(event){ event.preventDefault(); const body=Object.fromEntries(new FormData(event.target)); try{ const data=await api("/api/trial-register",{method:"POST",body:JSON.stringify(body)}); event.target.reset(); verificationBox.classList.remove("hidden"); verificationBox.innerHTML=data.verificationUrl?`<h3>E-posta doğrulaması gerekli</h3><p class="muted">Demo ortamında gerçek e-posta gönderimi yerine doğrulama linkini burada gösteriyoruz. Yayında bu link e-posta ile gönderilir.</p><a href="${data.verificationUrl}">${data.verificationUrl}</a>`:`<h3>Sunucuyu yeniden başlatmanız gerekiyor</h3><p class="muted">Doğrulama sistemi eklendi fakat localhost hâlâ eski sunucu koduyla çalışıyor. Terminalde sunucuyu kapatıp tekrar başlatınca doğrulama linki görünecek.</p>`; toastMsg(data.verificationUrl?"Doğrulama linki oluşturuldu.":"Sunucuyu yeniden başlatın."); }catch(e){ toastMsg(e.message); } }
     async function clientLogin(event){ event.preventDefault(); try{ await api("/api/auth/client-login",{method:"POST",body:JSON.stringify({email:loginEmail.value,password:loginPassword.value})}); await loadProfile(); }catch(e){ toastMsg(e.message); } }
+    async function handleEmailVerification(){ const token=new URLSearchParams(location.search).get("verify"); if(!token) return; try{ await api(`/api/verify-email?token=${encodeURIComponent(token)}`,{method:"GET"}); history.replaceState(null,"","/"); toastMsg("E-posta doğrulandı."); await loadProfile(); }catch(e){ toastMsg(e.message); } }
     async function loadProfile(){ const {client}=await api("/api/client/me"); currentClient=client; renderProfile(client); home.classList.add("hidden"); login.classList.add("hidden"); guestActions.classList.add("hidden"); profile.style.display="grid"; }
     function statusLabel(c){ return ({pending:"Deneme isteği bekliyor",active:"14 günlük deneme aktif","trial-ended":"14 günlük deneme bitti",continued:"Devam eden danışan","not-continued":"Devam etmeyen danışan"})[c.status] || c.status; }
     function renderProfile(c){ profileName.textContent=c.name; profileGoal.textContent=`Hedef: ${c.goal}`; profileStatus.textContent=statusLabel(c); planIntro.textContent=c.planNote || ""; profileInfo.innerHTML=[["E-posta",c.email],["Telefon",c.phone],["Cinsiyet / yaş",`${c.gender}, ${c.age}`],["Kan grubu",c.blood],["Alerjiler",c.allergies],["Üyelik",c.membership==="trial"?"14 günlük deneme":"Normal danışan"]].map(([a,b])=>`<div class="box"><span>${a}:</span><strong>${b}</strong></div>`).join(""); renderWeeks(c); renderWeights(c); }
@@ -125,6 +130,7 @@
     function formatMonth(v){ return /^\d{4}-\d{2}$/.test(v)?`${v.split("-")[1]}.${v.split("-")[0]}`:v; }
     async function logout(){ await api("/api/auth/logout",{method:"POST"}); showHome(); }
     function toastMsg(m){ toast.textContent=m; toast.classList.add("show"); setTimeout(()=>toast.classList.remove("show"),2600); }
+    handleEmailVerification();
   </script>
 </body>
 </html>
