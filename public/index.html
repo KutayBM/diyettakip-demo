@@ -111,9 +111,25 @@
         <label class="full">E-posta<input id="loginEmail" type="email" placeholder="danisan@ornek.com" required></label>
         <label class="full">Şifre<input id="loginPassword" type="password" placeholder="••••••" required></label>
         <button class="btn full">Giriş Yap</button>
+        <button class="btn secondary full" type="button" onclick="showForgotPassword()">Şifremi Unuttum</button>
       </form>
       <div class="card"><h3>Henüz hesabınız yok mu?</h3><p class="muted">14 günlük deneme formunu doldurarak kayıt oluşturabilirsiniz.</p><br><button class="btn coral" onclick="showHome(); trialForm.scrollIntoView({behavior:'smooth'})">Üye Ol</button></div>
     </div>
+    <form id="forgotPasswordForm" class="card form-grid hidden" onsubmit="forgotPassword(event)">
+      <div class="full"><h3>Şifre Sıfırlama</h3><p class="muted">Kayıtlı e-posta adresinizi yazın. Demo ortamında sıfırlama linki burada gösterilir; yayında e-posta ile gönderilir.</p></div>
+      <label class="full">E-posta<input id="forgotEmail" type="email" required></label>
+      <button class="btn full">Sıfırlama Linki Oluştur</button>
+    </form>
+    <div id="resetBox" class="verify-box hidden"></div>
+  </main>
+
+  <main id="resetPasswordPage" class="section hidden">
+    <h2>Yeni Şifre Belirle</h2>
+    <form class="card form-grid" onsubmit="resetPassword(event)">
+      <label class="full">Yeni şifre<input id="newPassword" type="password" minlength="6" required></label>
+      <label class="full">Yeni şifre tekrar<input id="newPasswordAgain" type="password" minlength="6" required></label>
+      <button class="btn full">Şifreyi Güncelle</button>
+    </form>
   </main>
 
   <main id="profile" class="section profile">
@@ -137,11 +153,15 @@
       if (!res.ok) throw new Error(data.error || "İşlem başarısız.");
       return data;
     }
-    function showHome(){ home.classList.remove("hidden"); login.classList.add("hidden"); profile.style.display="none"; guestActions.classList.remove("hidden"); }
-    function showLogin(){ home.classList.add("hidden"); login.classList.remove("hidden"); profile.style.display="none"; guestActions.classList.remove("hidden"); }
+    function showHome(){ home.classList.remove("hidden"); login.classList.add("hidden"); resetPasswordPage.classList.add("hidden"); profile.style.display="none"; guestActions.classList.remove("hidden"); }
+    function showLogin(){ home.classList.add("hidden"); login.classList.remove("hidden"); resetPasswordPage.classList.add("hidden"); profile.style.display="none"; guestActions.classList.remove("hidden"); }
+    function showForgotPassword(){ forgotPasswordForm.classList.toggle("hidden"); resetBox.classList.add("hidden"); forgotEmail.value=loginEmail.value||""; }
     async function registerTrial(event){ event.preventDefault(); const body=Object.fromEntries(new FormData(event.target)); try{ const data=await api("/api/trial-register",{method:"POST",body:JSON.stringify(body)}); event.target.reset(); verificationBox.classList.remove("hidden"); verificationBox.innerHTML=data.verificationUrl?`<h3>E-posta doğrulaması gerekli</h3><p class="muted">Demo ortamında gerçek e-posta gönderimi yerine doğrulama linkini burada gösteriyoruz. Yayında bu link e-posta ile gönderilir.</p><a href="${data.verificationUrl}">${data.verificationUrl}</a>`:`<h3>Sunucuyu yeniden başlatmanız gerekiyor</h3><p class="muted">Doğrulama sistemi eklendi fakat localhost hâlâ eski sunucu koduyla çalışıyor. Terminalde sunucuyu kapatıp tekrar başlatınca doğrulama linki görünecek.</p>`; toastMsg(data.verificationUrl?"Doğrulama linki oluşturuldu.":"Sunucuyu yeniden başlatın."); }catch(e){ toastMsg(e.message); } }
     async function clientLogin(event){ event.preventDefault(); try{ await api("/api/auth/client-login",{method:"POST",body:JSON.stringify({email:loginEmail.value,password:loginPassword.value})}); await loadProfile(); }catch(e){ toastMsg(e.message); } }
-    async function handleEmailVerification(){ const token=new URLSearchParams(location.search).get("verify"); if(!token) return; try{ await api(`/api/verify-email?token=${encodeURIComponent(token)}`,{method:"GET"}); history.replaceState(null,"","/"); toastMsg("E-posta doğrulandı."); await loadProfile(); }catch(e){ toastMsg(e.message); } }
+    async function forgotPassword(event){ event.preventDefault(); try{ const data=await api("/api/auth/forgot-password",{method:"POST",body:JSON.stringify({email:forgotEmail.value})}); resetBox.classList.remove("hidden"); resetBox.innerHTML=data.resetUrl?`<h3>Şifre sıfırlama linki</h3><p class="muted">Demo ortamında link burada gösterilir. Yayında bu link sadece e-posta adresine gönderilir.</p><a href="${data.resetUrl}">${data.resetUrl}</a>`:`<h3>İstek alındı</h3><p class="muted">Bu e-posta kayıtlıysa şifre sıfırlama bağlantısı gönderilir.</p>`; toastMsg("Şifre sıfırlama isteği alındı."); }catch(e){ toastMsg(e.message); } }
+    async function resetPassword(event){ event.preventDefault(); if(newPassword.value!==newPasswordAgain.value) return toastMsg("Şifreler aynı olmalı."); const token=new URLSearchParams(location.search).get("reset"); try{ await api("/api/auth/reset-password",{method:"POST",body:JSON.stringify({token,password:newPassword.value})}); toastMsg("Şifre güncellendi. Yeni şifrenizle giriş yapabilirsiniz."); history.replaceState(null,"","/"); showLogin(); }catch(e){ toastMsg(e.message); } }
+    async function handleEmailVerification(){ const params=new URLSearchParams(location.search); if(params.get("reset")) return; const token=params.get("verify"); if(!token) return; try{ await api(`/api/verify-email?token=${encodeURIComponent(token)}`,{method:"GET"}); history.replaceState(null,"","/"); toastMsg("E-posta doğrulandı."); await loadProfile(); }catch(e){ toastMsg(e.message); } }
+    function handlePasswordResetLink(){ const token=new URLSearchParams(location.search).get("reset"); if(!token) return; home.classList.add("hidden"); login.classList.add("hidden"); profile.style.display="none"; guestActions.classList.add("hidden"); resetPasswordPage.classList.remove("hidden"); }
     async function loadProfile(){ const {client}=await api("/api/client/me"); currentClient=client; renderProfile(client); home.classList.add("hidden"); login.classList.add("hidden"); guestActions.classList.add("hidden"); profile.style.display="grid"; }
     function statusLabel(c){ return ({pending:"Deneme isteği bekliyor",active:"14 günlük deneme aktif","trial-ended":"14 günlük deneme bitti",continued:"Devam eden danışan","not-continued":"Devam etmeyen danışan"})[c.status] || c.status; }
     function renderProfile(c){ profileName.textContent=c.name; profileGoal.textContent=`Hedef: ${c.goal}`; profileStatus.textContent=statusLabel(c); planIntro.textContent=c.planNote || ""; profileInfo.innerHTML=[["E-posta",c.email],["Telefon",c.phone],["Cinsiyet / yaş",`${c.gender}, ${c.age}`],["Kan grubu",c.blood],["Alerjiler",c.allergies],["Üyelik",c.membership==="trial"?"14 günlük deneme":"Normal danışan"]].map(([a,b])=>`<div class="box"><span>${a}:</span><strong>${b}</strong></div>`).join(""); renderWeeks(c); renderWeights(c); }
@@ -153,6 +173,7 @@
     async function logout(){ await api("/api/auth/logout",{method:"POST"}); showHome(); }
     function toastMsg(m){ toast.textContent=m; toast.classList.add("show"); setTimeout(()=>toast.classList.remove("show"),2600); }
     handleEmailVerification();
+    handlePasswordResetLink();
   </script>
 </body>
 </html>

@@ -66,6 +66,12 @@ function verificationUrl(req, token) {
   return `${proto}://${host}/?verify=${encodeURIComponent(token)}`;
 }
 
+function resetUrl(req, token) {
+  const proto = req.headers["x-forwarded-proto"] || "http";
+  const host = req.headers.host || `localhost:${PORT}`;
+  return `${proto}://${host}/?reset=${encodeURIComponent(token)}`;
+}
+
 function normalizeDb(db) {
   db.users = db.users || [];
   db.clients = db.clients || [];
@@ -282,6 +288,35 @@ async function handleApi(req, res, url) {
     if (!user || !verifyPassword(body.password, user.passwordHash)) return sendJson(res, 401, { error: "E-posta veya şifre hatalı." });
     if (user.emailVerified === false) return sendJson(res, 403, { error: "Lütfen önce e-posta adresinizi doğrulayın." });
     createSession(res, user);
+    return sendJson(res, 200, { ok: true });
+  }
+
+  if (req.method === "POST" && url.pathname === "/api/auth/forgot-password") {
+    const body = await readBody(req);
+    const email = String(body.email || "").trim().toLowerCase();
+    const user = db.users.find(item => item.role === "client" && item.email.toLowerCase() === email);
+    if (!user) return sendJson(res, 200, { ok: true });
+    const token = verificationToken();
+    user.passwordResetToken = token;
+    user.passwordResetExpiresAt = new Date(Date.now() + 1000 * 60 * 30).toISOString();
+    writeDb(db);
+    return sendJson(res, 200, { ok: true, resetUrl: resetUrl(req, token) });
+  }
+
+  if (req.method === "POST" && url.pathname === "/api/auth/reset-password") {
+    const body = await readBody(req);
+    const token = String(body.token || "");
+    const password = String(body.password || "");
+    if (password.length < 6) return sendJson(res, 400, { error: "Yeni şifre en az 6 karakter olmalı." });
+    const user = db.users.find(item => item.role === "client" && item.passwordResetToken === token);
+    if (!token || !user) return sendJson(res, 400, { error: "Şifre sıfırlama linki geçersiz." });
+    if (user.passwordResetExpiresAt && new Date(user.passwordResetExpiresAt).getTime() < Date.now()) {
+      return sendJson(res, 400, { error: "Şifre sıfırlama linkinin süresi dolmuş." });
+    }
+    user.passwordHash = hashPassword(password);
+    user.passwordResetToken = null;
+    user.passwordResetExpiresAt = null;
+    writeDb(db);
     return sendJson(res, 200, { ok: true });
   }
 
