@@ -39,7 +39,9 @@
       "emailVerified": true,
       "emailVerificationToken": null,
       "emailVerificationExpiresAt": null,
-      "createdAt": "2026-07-08T22:51:53.559Z"
+      "createdAt": "2026-07-08T22:51:53.559Z",
+      "passwordResetToken": "2bf7bd7db83eaf4f39afc0b444092aba37fa4f73ab891cabd52d50586f082938",
+      "passwordResetExpiresAt": "2026-07-09T00:03:35.076Z"
     }
   ],
   "clients": [
