@@ -33,7 +33,7 @@
     .full { grid-column:1/-1; }
     .muted { color:var(--muted); }
     .banner-wrap { overflow:hidden; }
-    .banner-track { display:grid; grid-auto-flow:column; grid-auto-columns:min(86vw,720px); gap:18px; width:max-content; animation:bannerSlide 15s infinite ease-in-out; }
+    .banner-track { display:grid; grid-auto-flow:column; grid-auto-columns:min(86vw,720px); gap:18px; width:max-content; animation:bannerSlide 18s infinite ease-in-out; }
     .banner-track:hover { animation-play-state:paused; }
     .banner-track::-webkit-scrollbar { height:8px; }
     .banner-track::-webkit-scrollbar-thumb { background:#c9ddd4; border-radius:999px; }
@@ -42,9 +42,10 @@
     .banner.follow { --banner-image:url("/assets/banner-mobile.png"); }
     .banner.doctor { --banner-image:url("/assets/dr-kutay-portrait.png"); }
     @keyframes bannerSlide {
-      0%, 25% { transform:translateX(0); }
-      33%, 58% { transform:translateX(calc(-1 * (min(86vw,720px) + 18px))); }
-      66%, 91% { transform:translateX(calc(-2 * (min(86vw,720px) + 18px))); }
+      0%, 20% { transform:translateX(0); }
+      27%, 47% { transform:translateX(calc(-1 * (min(86vw,720px) + 18px))); }
+      54%, 74% { transform:translateX(calc(-2 * (min(86vw,720px) + 18px))); }
+      81%, 99.9% { transform:translateX(calc(-3 * (min(86vw,720px) + 18px))); }
       100% { transform:translateX(0); }
     }
     .profile { display:none; }
@@ -84,6 +85,7 @@
         <div class="banner doctor"><div><h2 style="color:white">Bilimsel temelli, sürdürülebilir beslenme takibi.</h2><p>Dr. Dyt. Alperen Aksu, danışanlarına kişiye özel beslenme planları hazırlar ve süreci kilo takibiyle birlikte yönetir.</p></div></div>
         <div class="banner follow"><div><h2 style="color:white">14 günlük deneme süreci sonunda yalnız değilsiniz.</h2><p>Deneme süreniz tamamlandığında Dr. Dyt. Alperen Aksu sizinle iletişime geçerek sürecin devamı hakkında görüşme sağlar.</p></div></div>
         <div class="banner plan"><div><h2 style="color:white">Planlarınız ve ölçümleriniz tek yerde takip edilir.</h2><p>Beslenme programınız haftalık olarak hazırlanır, kilo takibiniz ise ofis randevularınız sonrasında güncellenir.</p></div></div>
+        <div class="banner doctor"><div><h2 style="color:white">Bilimsel temelli, sürdürülebilir beslenme takibi.</h2><p>Dr. Dyt. Alperen Aksu, danışanlarına kişiye özel beslenme planları hazırlar ve süreci kilo takibiyle birlikte yönetir.</p></div></div>
       </div></div>
     </section>
     <section class="section" id="trialForm">
